@@ -76,7 +76,7 @@ void ParticleFilter::prediction(double delta_t, double std_pos[], double velocit
 	}
 }
 
-std::vector<LandmarkObs> ParticleFilter::dataAssociation(std::vector<LandmarkObs> predicted, std::vector<LandmarkObs>& observations) {
+void ParticleFilter::dataAssociation(std::vector<LandmarkObs> predicted, std::vector<LandmarkObs>& observations) {
 	// TODO: Find the predicted measurement that is closest to each observed measurement and assign the 
 	//   observed measurement to this particular landmark.
 	// NOTE: this method will NOT be called by the grading code. But you will probably find it useful to 
@@ -100,12 +100,11 @@ std::vector<LandmarkObs> ParticleFilter::dataAssociation(std::vector<LandmarkObs
 
 			if(dist < min_dist){
 				min_dist = dist;
-				p_obs = c_pred;
+				min_id = c_pred.id;
 			}
 		}
-		predicted_observation.push_back(p_obs);
-	}
-	return predicted_observation;		
+		observations[i].id = min_id;
+	}	
 }
 
 void ParticleFilter::updateWeights(double sensor_range, double std_landmark[], 
@@ -165,17 +164,21 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
 			transformed_observations.push_back(temp_obs);
 		}
 		
-		std::vector<LandmarkObs> predict_obs = dataAssociation(predicted_landmarks, transformed_observations);
+		dataAssociation(predicted_landmarks, transformed_observations);
 
 		double weight = 1.0;
 		double den = (2.0 * M_PI * std_landmark[0] * std_landmark[1]);
 		for(int l = 0; l < transformed_observations.size(); l++){
-			LandmarkObs c_obs = transformed_observations[l]; //current transformed observation
-			LandmarkObs a_obs = predict_obs[l];				 //current associated observation
-			double x_num = ((c_obs.x - a_obs.x) * (c_obs.x - a_obs.x)) / (2 * std_landmark[0] * std_landmark[0]);
-			double y_num = ((c_obs.y - a_obs.y) * (c_obs.y - a_obs.y)) / (2 * std_landmark[1] * std_landmark[1]);				
-			double P = exp(-(x_num+y_num))/den;
-			weight = weight * P;
+			LandmarkObs c_obs = transformed_observations[l];
+			for (int m = 0; m < predicted_landmarks.size(); m++){
+				LandmarkObs a_obs = predicted_landmarks[m];	
+				if(c_obs.id == a_obs.id){
+					double x_num = ((c_obs.x - a_obs.x) * (c_obs.x - a_obs.x)) / (2 * std_landmark[0] * std_landmark[0]);
+					double y_num = ((c_obs.y - a_obs.y) * (c_obs.y - a_obs.y)) / (2 * std_landmark[1] * std_landmark[1]);				
+					double P = exp(-(x_num+y_num))/den;
+					weight = weight * P;
+				}	
+			}
 		}
 		weights[i] = weight;
 		particles[i].weight = weight;
