@@ -26,6 +26,7 @@ void ParticleFilter::init(double x, double y, double theta, double std[]) {
 	normal_distribution<double> dist_theta(theta,std[2]);
 
 	for(int i = 0; i < num_particles; i++){
+		// get the information of current particle
 		Particle p;
 		p.id     = i;
 		p.x      = dist_x(gen);
@@ -60,6 +61,7 @@ void ParticleFilter::prediction(double delta_t, double std_pos[], double velocit
 		double theta_o = c_particle.theta;
 
 		if (fabs(yaw_rate) < 0.01){
+			// avoid divided by zero
 			x_f = x_o + velocity * delta_t * cos(theta_o) + dist_x(gen);
 			y_f = y_o + velocity * delta_t * sin(theta_o) + dist_y(gen);
 			theta_f = theta_o + dist_yaw(gen);
@@ -68,7 +70,6 @@ void ParticleFilter::prediction(double delta_t, double std_pos[], double velocit
 			y_f = y_o + velocity / yaw_rate * (cos(theta_o) - cos(theta_o + yaw_rate * delta_t)) + dist_y(gen);
 			theta_f = theta_o + yaw_rate * delta_t + dist_yaw(gen);
 		}
-		//cout << "X:"<< xf << " Y:" << yf << endl;
 		particles[i].x = x_f;
 		particles[i].y = y_f;
 		particles[i].theta = theta_f; 
@@ -104,7 +105,6 @@ std::vector<LandmarkObs> ParticleFilter::dataAssociation(std::vector<LandmarkObs
 		}
 		predicted_observation.push_back(p_obs);
 	}
-
 	return predicted_observation;		
 }
 
@@ -175,16 +175,8 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
 			double x_num = ((c_obs.x - a_obs.x) * (c_obs.x - a_obs.x)) / (2 * std_landmark[0] * std_landmark[0]);
 			double y_num = ((c_obs.y - a_obs.y) * (c_obs.y - a_obs.y)) / (2 * std_landmark[1] * std_landmark[1]);				
 			double P = exp(-(x_num+y_num))/den;
-			//cout << "x_num:" << x_num << endl;
-			//cout << "x:" << transformed_observations[l].x << "Px:" << predicted_landmarks[m].x << endl;
-			
-			//cout << "y_num:" << y_num << endl;
-			//cout << "y:" << transformed_observations[l].y << "Py:" << predicted_landmarks[m].y << endl;
-			
-			//cout << "P" << P << endl;
 			weight = weight * P;
 		}
-		//cout << weight << endl;
 		weights[i] = weight;
 		particles[i].weight = weight;
 	}
@@ -201,7 +193,6 @@ void ParticleFilter::resample() {
         new_particles.push_back(particles[d(gen)]);
     }
     particles = new_particles;
-
 }
 
 void ParticleFilter::write(std::string filename) {
